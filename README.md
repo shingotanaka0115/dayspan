@@ -32,11 +32,11 @@ Month and year calculations use calendar boundaries rather than fixed 30-day or 
 ## Usage
 
 1. Select text in a Markdown note.
-2. Open the Command palette and run **選択した文章を登録** (Register selected text). In editing view, you can also use **Dayspanに登録** (Add to Dayspan) from the context menu.
+2. Open the Command palette and run **Add selected text**. In editing view, you can also use **Add to Dayspan** from the context menu.
 3. Confirm the title, reference date, and display format.
-4. Open Dayspan from the ribbon calendar icon or run **一覧を開く** (Open list) from the Command palette.
+4. Open Dayspan from the ribbon calendar icon or run **Open list** from the Command palette.
 
-You can also use **手動で登録** (Register manually) to add birthdays, age milestones, anniversaries, or future deadlines without selecting text.
+You can also use **Add manually** to add birthdays, age milestones, anniversaries, or future deadlines without selecting text.
 
 ## Data and privacy
 

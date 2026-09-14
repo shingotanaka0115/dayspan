@@ -1,6 +1,7 @@
 import {
   App,
   Editor,
+  getLanguage,
   MarkdownFileInfo,
   MarkdownView,
   Menu,
@@ -13,6 +14,13 @@ import {
   TFolder,
 } from "obsidian";
 import { toDateKey, parseDateKey } from "./src/date-utils";
+import {
+  createTranslator,
+  DayspanLocale,
+  resolveLocale,
+  TranslationKey,
+  TranslationVariables,
+} from "./src/i18n";
 import { DayspanEntryModal } from "./src/modals";
 import {
   DayspanDraft,
@@ -52,23 +60,23 @@ export default class DayspanPlugin extends Plugin {
 
     this.registerView(DAYSPAN_VIEW_TYPE, (leaf) => new DayspanView(leaf, this));
 
-    this.addRibbonIcon("calendar-range", "Dayspanを開く", () => void this.activateView());
+    this.addRibbonIcon("calendar-range", this.t("ribbon.open"), () => void this.activateView());
 
     this.addCommand({
       id: "open-list",
-      name: "一覧を開く",
+      name: this.t("command.openList"),
       callback: () => void this.activateView(),
     });
 
     this.addCommand({
       id: "register-selection",
-      name: "選択した文章を登録",
+      name: this.t("command.registerSelection"),
       callback: () => this.openActiveSelectionEntry(),
     });
 
     this.addCommand({
       id: "register-manually",
-      name: "手動で登録",
+      name: this.t("command.registerManually"),
       callback: () => this.openManualEntry(),
     });
 
@@ -77,7 +85,7 @@ export default class DayspanPlugin extends Plugin {
         if (!editor.getSelection().trim()) return;
         menu.addItem((item) =>
           item
-            .setTitle("Dayspanに登録")
+            .setTitle(this.t("context.register"))
             .setIcon("calendar-plus")
             .onClick(() => this.openSelectionEntry(editor, view))
         );
@@ -110,6 +118,14 @@ export default class DayspanPlugin extends Plugin {
     return toDateKey(new Date());
   }
 
+  locale(): DayspanLocale {
+    return resolveLocale(getLanguage());
+  }
+
+  t(key: TranslationKey, variables?: TranslationVariables): string {
+    return createTranslator(getLanguage())(key, variables);
+  }
+
   async activateView(): Promise<void> {
     let leaf = this.app.workspace.getLeavesOfType(DAYSPAN_VIEW_TYPE)[0];
     if (!leaf) {
@@ -124,14 +140,14 @@ export default class DayspanPlugin extends Plugin {
   openSelectionEntry(editor: Editor, view: MarkdownView | MarkdownFileInfo): void {
     const selection = editor.getSelection().trim();
     if (!selection) {
-      new Notice("文章を選択してから実行してください");
+      new Notice(this.t("notice.selectText"));
       return;
     }
 
     const file = view.file;
     const sourceLine = Math.min(editor.getCursor("from").line, editor.getCursor("to").line) + 1;
     this.openSelectionDraft({
-      title: makeTitleFromSelection(selection),
+      title: makeTitleFromSelection(selection, this.t("default.newEntry")),
       date: this.inferDate(file),
       excerpt: selection,
       sourcePath: file?.path,
@@ -152,12 +168,12 @@ export default class DayspanPlugin extends Plugin {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     const previewSelection = this.getMarkdownPreviewSelection(view);
     if (!view?.file || !previewSelection) {
-      new Notice("Markdown本文の文章を選択してから実行してください");
+      new Notice(this.t("notice.selectMarkdownText"));
       return;
     }
 
     this.openSelectionDraft({
-      title: makeTitleFromSelection(previewSelection.text),
+      title: makeTitleFromSelection(previewSelection.text, this.t("default.newEntry")),
       date: this.inferDate(view.file),
       excerpt: previewSelection.text,
       sourcePath: view.file.path,
@@ -169,11 +185,12 @@ export default class DayspanPlugin extends Plugin {
     new DayspanEntryModal(
       this.app,
       initial,
-      "dayspanに登録",
-      "登録",
+      this.t("modal.registerSelection"),
+      this.t("action.register"),
+      (key, variables) => this.t(key, variables),
       async (draft) => {
         await this.createRecord(draft);
-        new Notice("Dayspanに登録しました");
+        new Notice(this.t("notice.registered"));
         await this.activateView();
       }
     ).open();
@@ -183,11 +200,12 @@ export default class DayspanPlugin extends Plugin {
     new DayspanEntryModal(
       this.app,
       { title: "", date: this.todayKey(), excerpt: "" },
-      "dayspanに手動登録",
-      "登録",
+      this.t("modal.registerManual"),
+      this.t("action.register"),
+      (key, variables) => this.t(key, variables),
       async (draft) => {
         await this.createRecord(draft);
-        new Notice("Dayspanに登録しました");
+        new Notice(this.t("notice.registered"));
         await this.refreshViews();
       }
     ).open();
@@ -205,11 +223,12 @@ export default class DayspanPlugin extends Plugin {
         sourceLine: record.sourceLine,
         created: record.created,
       },
-      "dayspanを編集",
-      "保存",
+      this.t("modal.edit"),
+      this.t("action.save"),
+      (key, variables) => this.t(key, variables),
       async (draft) => {
         await this.app.vault.modify(record.file, serializeRecord(draft));
-        new Notice("Dayspanを更新しました");
+        new Notice(this.t("notice.updated"));
         await this.refreshViews();
       }
     ).open();
@@ -219,7 +238,7 @@ export default class DayspanPlugin extends Plugin {
     const confirmed = await this.app.fileManager.promptForDeletion(record.file);
     if (!confirmed) return;
     await this.app.fileManager.trashFile(record.file);
-    new Notice("Dayspanの記録をゴミ箱へ移動しました");
+    new Notice(this.t("notice.trashed"));
     await this.refreshViews();
   }
 
@@ -227,7 +246,7 @@ export default class DayspanPlugin extends Plugin {
     const source = record.sourcePath ? this.app.vault.getFileByPath(record.sourcePath) : null;
     if (!source) {
       await this.openRecordFile(record);
-      if (record.sourcePath) new Notice("元ノートが見つからないため、登録ノートを開きました");
+      if (record.sourcePath) new Notice(this.t("notice.sourceMissing"));
       return;
     }
 
@@ -331,7 +350,7 @@ export default class DayspanPlugin extends Plugin {
   private async createRecord(draft: DayspanDraft): Promise<TFile> {
     const folder = this.normalizedStorageFolder();
     await this.ensureFolder(folder);
-    const base = `${draft.date} - ${sanitizeFileName(draft.title)}`;
+    const base = `${draft.date} - ${sanitizeFileName(draft.title, this.t("default.entry"))}`;
     let path = `${folder}/${base}.md`;
     let index = 2;
     while (this.app.vault.getAbstractFileByPath(path)) {
@@ -388,8 +407,8 @@ class DayspanSettingTab extends PluginSettingTab {
   getSettingDefinitions(): SettingDefinitionItem<DayspanSettingKey>[] {
     return [
       {
-        name: "記録の保存先",
-        desc: "Dayspanの登録情報をMarkdownで保存するVault内フォルダです",
+        name: this.plugin.t("setting.storage"),
+        desc: this.plugin.t("setting.storageDesc"),
         control: {
           type: "folder",
           key: "storageFolder",
@@ -399,20 +418,20 @@ class DayspanSettingTab extends PluginSettingTab {
       },
       {
         type: "list",
-        heading: "セクションの並び順",
+        heading: this.plugin.t("setting.sectionOrder"),
         items: this.plugin.settings.sectionOrder.map((kind, index) => ({
           name: this.sectionTitle(kind),
-          desc: `上から${index + 1}番目`,
+          desc: this.plugin.t("setting.position", { position: index + 1 }),
         })),
         onReorder: (from, to) => void this.moveSection(from, to),
       },
       {
         type: "group",
-        heading: "表示色",
+        heading: this.plugin.t("setting.colors"),
         items: [
           {
-            name: "あと何日の色",
-            desc: "未来の日付に使う色です",
+            name: this.plugin.t("setting.futureColor"),
+            desc: this.plugin.t("setting.futureColorDesc"),
             render: (setting) => {
               setting
                 .addColorPicker((color) =>
@@ -423,14 +442,14 @@ class DayspanSettingTab extends PluginSettingTab {
                 .addExtraButton((button) =>
                   button
                     .setIcon("rotate-ccw")
-                    .setTooltip("初期色に戻す")
+                    .setTooltip(this.plugin.t("setting.resetColor"))
                     .onClick(() => void this.resetColor("futureColor"))
                 );
             },
           },
           {
-            name: "あれから何日の色",
-            desc: "過去の日付に使う色です",
+            name: this.plugin.t("setting.pastColor"),
+            desc: this.plugin.t("setting.pastColorDesc"),
             render: (setting) => {
               setting
                 .addColorPicker((color) =>
@@ -441,7 +460,7 @@ class DayspanSettingTab extends PluginSettingTab {
                 .addExtraButton((button) =>
                   button
                     .setIcon("rotate-ccw")
-                    .setTooltip("初期色に戻す")
+                    .setTooltip(this.plugin.t("setting.resetColor"))
                     .onClick(() => void this.resetColor("pastColor"))
                 );
             },
@@ -449,8 +468,8 @@ class DayspanSettingTab extends PluginSettingTab {
         ],
       },
       {
-        name: "期間の計算",
-        desc: "日数はカレンダー日で計算します。基準日と今日が同じ日は0日です。",
+        name: this.plugin.t("setting.calculation"),
+        desc: this.plugin.t("setting.calculationDesc"),
         searchable: false,
       },
     ];
@@ -468,9 +487,9 @@ class DayspanSettingTab extends PluginSettingTab {
   }
 
   private sectionTitle(kind: DayspanSectionKind): string {
-    if (kind === "future") return "あと何日";
-    if (kind === "today") return "今日";
-    return "あれから何日";
+    if (kind === "future") return this.plugin.t("section.future");
+    if (kind === "today") return this.plugin.t("section.today");
+    return this.plugin.t("section.past");
   }
 
   private async moveSection(from: number, to: number): Promise<void> {

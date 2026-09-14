@@ -3,10 +3,12 @@ import test from "node:test";
 import {
   differenceInCalendarDays,
   formatDateSpan,
+  formatLocalizedDate,
   normalizeDisplayMode,
   parseDateKey,
   toDateKey,
 } from "../src/date-utils";
+import { createTranslator, durationUnit, resolveLocale } from "../src/i18n";
 import { normalizeSectionOrder } from "../src/settings";
 
 test("基準日と今日が同じなら0日", () => {
@@ -39,24 +41,24 @@ test("表示形式がない既存データは日数表示になる", () => {
 
 test("日数・月数・年数を選んだ形式で返す", () => {
   assert.deepEqual(formatDateSpan("2019-10-23", "2026-09-11", "days"), [
-    { value: 2515, unit: "日" },
+    { value: 2515, unit: "day" },
   ]);
   assert.deepEqual(formatDateSpan("2026-01-03", "2026-09-11", "months"), [
-    { value: 8, unit: "ヶ月" },
+    { value: 8, unit: "month" },
   ]);
   assert.deepEqual(formatDateSpan("2019-10-23", "2026-09-11", "years"), [
-    { value: 6, unit: "年" },
+    { value: 6, unit: "year" },
   ]);
 });
 
 test("月＋日は完了した暦月と残りの日数で返す", () => {
   assert.deepEqual(formatDateSpan("2026-01-03", "2026-09-11", "months-days"), [
-    { value: 8, unit: "ヶ月" },
-    { value: 8, unit: "日" },
+    { value: 8, unit: "month" },
+    { value: 8, unit: "day" },
   ]);
   assert.deepEqual(formatDateSpan("2024-01-31", "2024-02-29", "months-days"), [
-    { value: 1, unit: "ヶ月" },
-    { value: 0, unit: "日" },
+    { value: 1, unit: "month" },
+    { value: 0, unit: "day" },
   ]);
 });
 
@@ -64,17 +66,17 @@ test("年＋月＋日は完了した暦年・暦月と残りの日数で返す",
   assert.deepEqual(
     formatDateSpan("2019-10-23", "2026-09-11", "years-months-days"),
     [
-      { value: 6, unit: "年" },
-      { value: 10, unit: "ヶ月" },
-      { value: 19, unit: "日" },
+      { value: 6, unit: "year" },
+      { value: 10, unit: "month" },
+      { value: 19, unit: "day" },
     ]
   );
   assert.deepEqual(
     formatDateSpan("2024-02-29", "2025-02-28", "years-months-days"),
     [
-      { value: 1, unit: "年" },
-      { value: 0, unit: "ヶ月" },
-      { value: 0, unit: "日" },
+      { value: 1, unit: "year" },
+      { value: 0, unit: "month" },
+      { value: 0, unit: "day" },
     ]
   );
 });
@@ -101,4 +103,32 @@ test("古い設定や不正な並び順には不足項目を補う", () => {
     "future",
     "today",
   ]);
+});
+
+test("Obsidianの日本語設定だけを日本語として扱い、それ以外は英語へフォールバックする", () => {
+  assert.equal(resolveLocale("ja"), "ja");
+  assert.equal(resolveLocale("ja-JP"), "ja");
+  assert.equal(resolveLocale("en"), "en");
+  assert.equal(resolveLocale("fr"), "en");
+});
+
+test("日本語と英語の表示文言を切り替える", () => {
+  assert.equal(createTranslator("ja")("section.future"), "あと何日");
+  assert.equal(createTranslator("en")("section.future"), "Days remaining");
+  assert.equal(
+    createTranslator("ja")("view.emptyDescription"),
+    "文章を選択して、コマンドまたは右クリックから「Dayspanに登録」を実行してください。"
+  );
+  assert.equal(
+    createTranslator("en")("view.openRecord", { title: "Sample event" }),
+    "Open Sample event"
+  );
+});
+
+test("期間単位と日付を日本語・英語で表示する", () => {
+  assert.equal(durationUnit("ja", "month", 8), "ヶ月");
+  assert.equal(durationUnit("en", "day", 1), "day");
+  assert.equal(durationUnit("en", "day", 2), "days");
+  assert.equal(formatLocalizedDate("2026-09-14", "ja"), "2026年9月14日(月)");
+  assert.equal(formatLocalizedDate("2026-09-14", "en"), "Mon, Sep 14, 2026");
 });

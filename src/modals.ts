@@ -4,6 +4,7 @@ import {
   normalizeDisplayMode,
   parseDateKey,
 } from "./date-utils";
+import { Translator } from "./i18n";
 import { DayspanDraft } from "./model";
 
 export class DayspanEntryModal extends Modal {
@@ -15,6 +16,7 @@ export class DayspanEntryModal extends Modal {
     initial: DayspanDraft,
     private heading: string,
     private submitLabel: string,
+    private t: Translator,
     private onSubmit: (draft: DayspanDraft) => Promise<void>
   ) {
     super(app);
@@ -31,8 +33,8 @@ export class DayspanEntryModal extends Modal {
     this.modalEl.addClass("dayspan-entry-modal");
 
     new Setting(contentEl)
-      .setName("名前")
-      .setDesc("一覧に表示する名前です")
+      .setName(this.t("modal.name"))
+      .setDesc(this.t("modal.nameDesc"))
       .addText((text) => {
         text.setValue(this.draft.title).onChange((value) => {
           this.draft.title = value;
@@ -41,8 +43,8 @@ export class DayspanEntryModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName("基準日")
-      .setDesc("今日との日数を数える日です")
+      .setName(this.t("modal.date"))
+      .setDesc(this.t("modal.dateDesc"))
       .addText((text) => {
         text.inputEl.type = "date";
         text.setValue(this.draft.date).onChange((value) => {
@@ -51,15 +53,15 @@ export class DayspanEntryModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName("表示形式")
-      .setDesc("この記録を一覧でどの単位にするか選びます")
+      .setName(this.t("modal.display"))
+      .setDesc(this.t("modal.displayDesc"))
       .addDropdown((dropdown) => {
         dropdown
-          .addOption("days", "日数（例：251日）")
-          .addOption("months", "月数（例：8ヶ月）")
-          .addOption("years", "年数（例：6年）")
-          .addOption("months-days", "月＋日（例：8ヶ月8日）")
-          .addOption("years-months-days", "年＋月＋日（例：6年10ヶ月19日）")
+          .addOption("days", this.t("modal.displayDays"))
+          .addOption("months", this.t("modal.displayMonths"))
+          .addOption("years", this.t("modal.displayYears"))
+          .addOption("months-days", this.t("modal.displayMonthsDays"))
+          .addOption("years-months-days", this.t("modal.displayYearsMonthsDays"))
           .setValue(this.draft.displayMode ?? DEFAULT_DISPLAY_MODE)
           .onChange((value) => {
             this.draft.displayMode = normalizeDisplayMode(value);
@@ -67,9 +69,9 @@ export class DayspanEntryModal extends Modal {
       });
 
     const excerptWrap = contentEl.createDiv("dayspan-modal-field");
-    excerptWrap.createEl("label", { text: "残しておく文章" });
+    excerptWrap.createEl("label", { text: this.t("modal.excerpt") });
     excerptWrap.createDiv({
-      text: "選択した文章はここに複製されます。元ノートは変更しません。",
+      text: this.t("modal.excerptDesc"),
       cls: "setting-item-description",
     });
     const excerpt = excerptWrap.createEl("textarea", {
@@ -81,8 +83,11 @@ export class DayspanEntryModal extends Modal {
     });
 
     if (this.draft.sourcePath) {
+      const line = this.draft.sourceLine
+        ? this.t("modal.sourceLine", { line: this.draft.sourceLine })
+        : "";
       contentEl.createDiv({
-        text: `元ノート: ${this.draft.sourcePath}${this.draft.sourceLine ? `（${this.draft.sourceLine}行目）` : ""}`,
+        text: this.t("modal.source", { path: this.draft.sourcePath, line }),
         cls: "dayspan-modal-source",
       });
     }
@@ -90,7 +95,7 @@ export class DayspanEntryModal extends Modal {
     this.errorEl = contentEl.createDiv("dayspan-modal-error");
 
     const actions = contentEl.createDiv("dayspan-modal-actions");
-    const cancel = actions.createEl("button", { text: "キャンセル" });
+    const cancel = actions.createEl("button", { text: this.t("action.cancel") });
     cancel.addEventListener("click", () => this.close());
     const submit = actions.createEl("button", {
       text: this.submitLabel,
@@ -102,11 +107,11 @@ export class DayspanEntryModal extends Modal {
   private async submit(button: HTMLButtonElement): Promise<void> {
     const title = this.draft.title.trim();
     if (!title) {
-      this.showError("名前を入力してください");
+      this.showError(this.t("error.nameRequired"));
       return;
     }
     if (!parseDateKey(this.draft.date)) {
-      this.showError("基準日を YYYY-MM-DD 形式で入力してください");
+      this.showError(this.t("error.dateInvalid"));
       return;
     }
 
@@ -116,7 +121,7 @@ export class DayspanEntryModal extends Modal {
       this.close();
     } catch (error) {
       button.disabled = false;
-      this.showError(error instanceof Error ? error.message : "保存できませんでした");
+      this.showError(error instanceof Error ? error.message : this.t("error.saveFailed"));
     }
   }
 

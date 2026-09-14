@@ -2,6 +2,13 @@
 
 All notable changes to Dayspan will be documented in this file.
 
+## 0.1.1
+
+- Add Japanese and English interfaces based on the Obsidian display language.
+- Localize dates and day, month, and year units, including English plural forms.
+- Generalize the empty-state guidance from journal text to text in any Markdown note.
+- Keep the header tagline readable across desktop, narrow panes, and mobile layouts.
+
 ## 0.1.0
 
 - Register selected Markdown text or add records manually.

@@ -1,0 +1,169 @@
+export type DayspanLocale = "ja" | "en";
+
+const JA_MESSAGES = {
+  "ribbon.open": "Dayspanを開く",
+  "command.openList": "一覧を開く",
+  "command.registerSelection": "選択した文章を登録",
+  "command.registerManually": "手動で登録",
+  "context.register": "Dayspanに登録",
+  "notice.selectText": "文章を選択してから実行してください",
+  "notice.selectMarkdownText": "Markdown本文の文章を選択してから実行してください",
+  "notice.registered": "Dayspanに登録しました",
+  "notice.updated": "Dayspanを更新しました",
+  "notice.trashed": "Dayspanの記録をゴミ箱へ移動しました",
+  "notice.sourceMissing": "元ノートが見つからないため、登録ノートを開きました",
+  "modal.registerSelection": "Dayspanに登録",
+  "modal.registerManual": "Dayspanに手動登録",
+  "modal.edit": "Dayspanを編集",
+  "modal.name": "名前",
+  "modal.nameDesc": "一覧に表示する名前です",
+  "modal.date": "基準日",
+  "modal.dateDesc": "今日との日数を数える日です",
+  "modal.display": "表示形式",
+  "modal.displayDesc": "この記録を一覧でどの単位にするか選びます",
+  "modal.displayDays": "日数（例：251日）",
+  "modal.displayMonths": "月数（例：8ヶ月）",
+  "modal.displayYears": "年数（例：6年）",
+  "modal.displayMonthsDays": "月＋日（例：8ヶ月8日）",
+  "modal.displayYearsMonthsDays": "年＋月＋日（例：6年10ヶ月19日）",
+  "modal.excerpt": "残しておく文章",
+  "modal.excerptDesc": "選択した文章はここに複製されます。元ノートは変更しません。",
+  "modal.source": "元ノート: {path}{line}",
+  "modal.sourceLine": "（{line}行目）",
+  "action.register": "登録",
+  "action.save": "保存",
+  "action.cancel": "キャンセル",
+  "action.edit": "編集",
+  "action.openRecord": "登録ノートを開く",
+  "action.openSource": "元ノートを開く",
+  "action.delete": "削除",
+  "action.actions": "操作",
+  "error.nameRequired": "名前を入力してください",
+  "error.dateInvalid": "基準日を YYYY-MM-DD 形式で入力してください",
+  "error.saveFailed": "保存できませんでした",
+  "view.tagline": "選んだ日と今日との「あいだ」",
+  "view.refresh": "再読み込み",
+  "view.emptyTitle": "まだ記録がありません",
+  "view.emptyDescription": "文章を選択して、コマンドまたは右クリックから「Dayspanに登録」を実行してください。",
+  "view.openRecord": "{title}を開く",
+  "section.future": "あと何日",
+  "section.today": "今日",
+  "section.past": "あれから何日",
+  "section.heading": "{title}（{count}）",
+  "setting.storage": "記録の保存先",
+  "setting.storageDesc": "Dayspanの登録情報をMarkdownで保存するVault内フォルダです",
+  "setting.sectionOrder": "セクションの並び順",
+  "setting.position": "上から{position}番目",
+  "setting.colors": "表示色",
+  "setting.futureColor": "あと何日の色",
+  "setting.futureColorDesc": "未来の日付に使う色です",
+  "setting.pastColor": "あれから何日の色",
+  "setting.pastColorDesc": "過去の日付に使う色です",
+  "setting.resetColor": "初期色に戻す",
+  "setting.calculation": "期間の計算",
+  "setting.calculationDesc": "日数はカレンダー日で計算します。基準日と今日が同じ日は0日です。",
+  "default.newEntry": "新しい記録",
+  "default.entry": "記録",
+} as const;
+
+export type TranslationKey = keyof typeof JA_MESSAGES;
+
+const EN_MESSAGES: Record<TranslationKey, string> = {
+  "ribbon.open": "Open Dayspan",
+  "command.openList": "Open list",
+  "command.registerSelection": "Add selected text",
+  "command.registerManually": "Add manually",
+  "context.register": "Add to Dayspan",
+  "notice.selectText": "Select some text first.",
+  "notice.selectMarkdownText": "Select text in a Markdown note first.",
+  "notice.registered": "Added to Dayspan.",
+  "notice.updated": "Dayspan entry updated.",
+  "notice.trashed": "Dayspan entry moved to the trash.",
+  "notice.sourceMissing": "The source note was not found, so the Dayspan entry was opened instead.",
+  "modal.registerSelection": "Add to Dayspan",
+  "modal.registerManual": "Add to Dayspan manually",
+  "modal.edit": "Edit Dayspan entry",
+  "modal.name": "Name",
+  "modal.nameDesc": "The name shown in the list.",
+  "modal.date": "Reference date",
+  "modal.dateDesc": "The date to count from or toward today.",
+  "modal.display": "Display format",
+  "modal.displayDesc": "Choose how this span appears in the list.",
+  "modal.displayDays": "Days (for example, 251 days)",
+  "modal.displayMonths": "Months (for example, 8 months)",
+  "modal.displayYears": "Years (for example, 6 years)",
+  "modal.displayMonthsDays": "Months + days (for example, 8 months 8 days)",
+  "modal.displayYearsMonthsDays": "Years + months + days (for example, 6 years 10 months 19 days)",
+  "modal.excerpt": "Text to keep",
+  "modal.excerptDesc": "The selected text is copied here. The source note is not changed.",
+  "modal.source": "Source note: {path}{line}",
+  "modal.sourceLine": " (line {line})",
+  "action.register": "Add",
+  "action.save": "Save",
+  "action.cancel": "Cancel",
+  "action.edit": "Edit",
+  "action.openRecord": "Open Dayspan entry",
+  "action.openSource": "Open source note",
+  "action.delete": "Delete",
+  "action.actions": "Actions",
+  "error.nameRequired": "Enter a name.",
+  "error.dateInvalid": "Enter the reference date in YYYY-MM-DD format.",
+  "error.saveFailed": "Could not save the entry.",
+  "view.tagline": "See the span between a selected day and today.",
+  "view.refresh": "Refresh",
+  "view.emptyTitle": "No entries yet",
+  "view.emptyDescription": "Select some text, then run “Add to Dayspan” from the command palette or context menu.",
+  "view.openRecord": "Open {title}",
+  "section.future": "Days remaining",
+  "section.today": "Today",
+  "section.past": "Days elapsed",
+  "section.heading": "{title} ({count})",
+  "setting.storage": "Storage folder",
+  "setting.storageDesc": "The folder in this vault where Dayspan stores its Markdown entries.",
+  "setting.sectionOrder": "Section order",
+  "setting.position": "Position {position} from the top",
+  "setting.colors": "Colors",
+  "setting.futureColor": "Days remaining color",
+  "setting.futureColorDesc": "The color used for future dates.",
+  "setting.pastColor": "Days elapsed color",
+  "setting.pastColorDesc": "The color used for past dates.",
+  "setting.resetColor": "Reset to default color",
+  "setting.calculation": "Span calculation",
+  "setting.calculationDesc": "Days are counted as calendar days. A reference date matching today is 0 days.",
+  "default.newEntry": "New entry",
+  "default.entry": "Entry",
+};
+
+export type TranslationVariables = Record<string, string | number>;
+export type Translator = (key: TranslationKey, variables?: TranslationVariables) => string;
+
+export function resolveLocale(language: string): DayspanLocale {
+  return language.toLowerCase().startsWith("ja") ? "ja" : "en";
+}
+
+export function createTranslator(language: string): Translator {
+  const messages = resolveLocale(language) === "ja" ? JA_MESSAGES : EN_MESSAGES;
+  return (key, variables = {}) => {
+    let message: string = messages[key];
+    for (const [name, value] of Object.entries(variables)) {
+      message = message.replaceAll(`{${name}}`, String(value));
+    }
+    return message;
+  };
+}
+
+export function durationUnit(
+  locale: DayspanLocale,
+  unit: "day" | "month" | "year",
+  value: number
+): string {
+  if (locale === "ja") {
+    if (unit === "day") return "日";
+    if (unit === "month") return "ヶ月";
+    return "年";
+  }
+
+  if (unit === "day") return value === 1 ? "day" : "days";
+  if (unit === "month") return value === 1 ? "month" : "months";
+  return value === 1 ? "year" : "years";
+}

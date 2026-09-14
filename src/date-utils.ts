@@ -17,7 +17,7 @@ export const DEFAULT_DISPLAY_MODE: DayspanDisplayMode = "days";
 
 export interface DayspanDisplayPart {
   value: number;
-  unit: string;
+  unit: "day" | "month" | "year";
 }
 
 const DISPLAY_MODES = new Set<DayspanDisplayMode>([
@@ -88,23 +88,23 @@ export function formatDateSpan(
     : [second, first];
 
   if (mode === "days") {
-    return [{ value: calendarDayDifference(start, end), unit: "日" }];
+    return [{ value: calendarDayDifference(start, end), unit: "day" }];
   }
 
   const { months, days } = completedMonthsAndDays(start, end);
-  if (mode === "months") return [{ value: months, unit: "ヶ月" }];
-  if (mode === "years") return [{ value: Math.floor(months / 12), unit: "年" }];
+  if (mode === "months") return [{ value: months, unit: "month" }];
+  if (mode === "years") return [{ value: Math.floor(months / 12), unit: "year" }];
   if (mode === "months-days") {
     return [
-      { value: months, unit: "ヶ月" },
-      { value: days, unit: "日" },
+      { value: months, unit: "month" },
+      { value: days, unit: "day" },
     ];
   }
 
   return [
-    { value: Math.floor(months / 12), unit: "年" },
-    { value: months % 12, unit: "ヶ月" },
-    { value: days, unit: "日" },
+    { value: Math.floor(months / 12), unit: "year" },
+    { value: months % 12, unit: "month" },
+    { value: days, unit: "day" },
   ];
 }
 
@@ -143,14 +143,15 @@ function compareCalendarDates(first: CalendarDate, second: CalendarDate): number
   return first.day - second.day;
 }
 
-export function formatJapaneseDate(dateKey: string): string {
+export function formatLocalizedDate(dateKey: string, locale: "ja" | "en"): string {
   const value = parseDateKey(dateKey);
   if (!value) return dateKey;
-  const date = new Date(value.year, value.month - 1, value.day, 12);
-  return new Intl.DateTimeFormat("ja-JP", {
+  const date = new Date(Date.UTC(value.year, value.month - 1, value.day, 12));
+  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     year: "numeric",
-    month: "long",
+    month: locale === "ja" ? "long" : "short",
     day: "numeric",
     weekday: "short",
+    timeZone: "UTC",
   }).format(date);
 }

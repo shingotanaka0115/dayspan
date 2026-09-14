@@ -78,11 +78,14 @@ export function parseRecord(file: TFile, content: string): DayspanRecord | null 
   };
 }
 
-export function makeTitleFromSelection(selection: string): string {
+export function makeTitleFromSelection(
+  selection: string,
+  fallback = "新しい記録"
+): string {
   const firstLine = selection
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .find(Boolean) ?? "新しい記録";
+    .find(Boolean) ?? fallback;
 
   const plain = firstLine
     .replace(/^#{1,6}\s+/, "")
@@ -93,10 +96,10 @@ export function makeTitleFromSelection(selection: string): string {
     .replace(/[*_~`=]/g, "")
     .trim();
 
-  return plain.length > 48 ? `${plain.slice(0, 47)}…` : plain || "新しい記録";
+  return plain.length > 48 ? `${plain.slice(0, 47)}…` : plain || fallback;
 }
 
-export function sanitizeFileName(title: string): string {
+export function sanitizeFileName(title: string, fallback = "記録"): string {
   const sanitized = title
     .replace(/[\\/:*?"<>|#^]/g, " ")
     .replaceAll("[", " ")
@@ -104,5 +107,5 @@ export function sanitizeFileName(title: string): string {
     .replace(/\s+/g, " ")
     .replace(/^\.+|\.+$/g, "")
     .trim();
-  return (sanitized || "記録").slice(0, 60);
+  return (sanitized || fallback).slice(0, 60);
 }

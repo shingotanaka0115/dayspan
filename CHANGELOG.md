@@ -2,6 +2,13 @@
 
 All notable changes to Dayspan will be documented in this file.
 
+## 0.1.3
+
+- Open the saved Dayspan record whenever a date card is selected.
+- Store the source note as a clickable Obsidian link in records created from selected text.
+- Let existing and manually created records choose, change, or remove a source note from the edit dialog.
+- Add BRAT installation instructions for public beta testing.
+
 ## 0.1.2
 
 - Let each date section be expanded or collapsed from its heading.

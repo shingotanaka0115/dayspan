@@ -181,7 +181,11 @@ export class DayspanView extends ItemView {
     card.tabIndex = 0;
     card.setAttribute("role", "button");
     card.setAttribute("aria-label", this.plugin.t("view.openRecord", { title: record.title }));
-    card.addEventListener("click", () => void this.plugin.openRecordFile(record));
+    card.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      void this.plugin.openRecordFile(record);
+    });
     card.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();

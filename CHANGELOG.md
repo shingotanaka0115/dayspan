@@ -2,6 +2,11 @@
 
 All notable changes to Dayspan will be documented in this file.
 
+## 0.1.4
+
+- Open the Dayspan record before normalizing its source-note link.
+- Prevent card clicks from propagating to other note-opening handlers.
+
 ## 0.1.3
 
 - Open the saved Dayspan record whenever a date card is selected.

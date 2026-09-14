@@ -1,7 +1,7 @@
 {
   "id": "dayspan",
   "name": "Dayspan",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "minAppVersion": "1.13.0",
   "description": "Track time elapsed since or remaining until dates selected from your Markdown notes.",
   "author": "Shingo Tanaka",

@@ -272,6 +272,9 @@ export default class DayspanPlugin extends Plugin {
   }
 
   async openRecordFile(record: DayspanRecord): Promise<void> {
+    const leaf = this.app.workspace.getLeaf(false);
+    await leaf.openFile(record.file, { active: true });
+
     const sourcePath = record.sourcePath;
     if (sourcePath) {
       await this.app.fileManager.processFrontMatter(
@@ -284,7 +287,6 @@ export default class DayspanPlugin extends Plugin {
         }
       );
     }
-    await this.app.workspace.getLeaf(false).openFile(record.file, { active: true });
   }
 
   async loadRecords(): Promise<DayspanRecord[]> {

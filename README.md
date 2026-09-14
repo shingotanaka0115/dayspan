@@ -9,6 +9,7 @@ Dayspan lets you intentionally save meaningful moments from your Markdown notes 
 > [!NOTE]
 > Dayspan is currently available as a public beta through GitHub and BRAT. It is not yet available in the Obsidian Community Plugins directory.
 > The interface follows Obsidian's display language in Japanese and English, with English used as the fallback for other languages.
+> See the [beta testing guide](BETA_TESTING.md) for installation, checks, and reporting.
 
 ## Features
 
@@ -63,7 +64,7 @@ The default record folder for new installations is `Dayspan`. You can change it 
 3. Enter `shingotanaka0115/dayspan` as the repository.
 4. Enable **Dayspan** under **Settings → Community plugins**.
 
-BRAT can check GitHub releases and install later beta updates. Dayspan releases follow semantic versions without a `v` prefix, such as `0.1.2`.
+BRAT can check GitHub releases and install later beta updates. Dayspan releases follow semantic versions without a `v` prefix, such as `0.1.4`.
 
 ### Manual installation
 

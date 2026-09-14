@@ -7,7 +7,7 @@ Make the span between a chosen date and today visible in Obsidian.
 Dayspan lets you intentionally save meaningful moments from your Markdown notes and see how much time has passed since them or remains until them. It does not automatically analyze your vault: you choose what becomes a record.
 
 > [!NOTE]
-> Dayspan is currently preparing for its first public beta and is not yet available in the Obsidian Community Plugins directory.
+> Dayspan is currently available as a public beta through GitHub and BRAT. It is not yet available in the Obsidian Community Plugins directory.
 > The interface follows Obsidian's display language in Japanese and English, with English used as the fallback for other languages.
 
 ## Features
@@ -54,14 +54,23 @@ The default record folder for new installations is `Dayspan`. You can change it 
 
 ## Installation
 
-### Manual installation during beta
+### BRAT (recommended during beta)
+
+1. Install and enable **BRAT** from Obsidian's Community Plugins directory.
+2. Open **Settings → BRAT** and choose **Add beta plugin**.
+3. Enter `shingotanaka0115/dayspan` as the repository.
+4. Enable **Dayspan** under **Settings → Community plugins**.
+
+BRAT can check GitHub releases and install later beta updates. Dayspan releases follow semantic versions without a `v` prefix, such as `0.1.2`.
+
+### Manual installation
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from a GitHub release.
 2. Create `<vault>/.obsidian/plugins/dayspan/`.
 3. Copy the three files into that folder.
 4. Reload Obsidian and enable **Dayspan** under **Settings → Community plugins**.
 
-Installation through the Community Plugins directory will be added after the initial review is complete.
+Direct installation through the Community Plugins directory will be added after the initial review is complete.
 
 ## Development
 

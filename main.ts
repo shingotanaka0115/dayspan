@@ -1,0 +1,505 @@
+import {
+  App,
+  Editor,
+  MarkdownFileInfo,
+  MarkdownView,
+  Menu,
+  Notice,
+  normalizePath,
+  Plugin,
+  PluginSettingTab,
+  SettingDefinitionItem,
+  TFile,
+  TFolder,
+} from "obsidian";
+import { toDateKey, parseDateKey } from "./src/date-utils";
+import { DayspanEntryModal } from "./src/modals";
+import {
+  DayspanDraft,
+  DayspanRecord,
+  makeTitleFromSelection,
+  parseRecord,
+  sanitizeFileName,
+  serializeRecord,
+} from "./src/model";
+import {
+  DEFAULT_SECTION_ORDER,
+  DayspanSectionKind,
+  normalizeSectionOrder,
+} from "./src/settings";
+import { DAYSPAN_VIEW_TYPE, DayspanView } from "./src/view";
+
+export interface DayspanSettings {
+  storageFolder: string;
+  futureColor: string;
+  pastColor: string;
+  sectionOrder: DayspanSectionKind[];
+}
+
+const DEFAULT_SETTINGS: DayspanSettings = {
+  storageFolder: "Dayspan",
+  futureColor: "#2ea8ff",
+  pastColor: "#f59e0b",
+  sectionOrder: [...DEFAULT_SECTION_ORDER],
+};
+
+export default class DayspanPlugin extends Plugin {
+  settings: DayspanSettings = DEFAULT_SETTINGS;
+  private refreshTimer?: number;
+
+  async onload(): Promise<void> {
+    await this.loadSettings();
+
+    this.registerView(DAYSPAN_VIEW_TYPE, (leaf) => new DayspanView(leaf, this));
+
+    this.addRibbonIcon("calendar-range", "Dayspanを開く", () => void this.activateView());
+
+    this.addCommand({
+      id: "open-list",
+      name: "一覧を開く",
+      callback: () => void this.activateView(),
+    });
+
+    this.addCommand({
+      id: "register-selection",
+      name: "選択した文章を登録",
+      callback: () => this.openActiveSelectionEntry(),
+    });
+
+    this.addCommand({
+      id: "register-manually",
+      name: "手動で登録",
+      callback: () => this.openManualEntry(),
+    });
+
+    this.registerEvent(
+      this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
+        if (!editor.getSelection().trim()) return;
+        menu.addItem((item) =>
+          item
+            .setTitle("Dayspanに登録")
+            .setIcon("calendar-plus")
+            .onClick(() => this.openSelectionEntry(editor, view))
+        );
+      })
+    );
+
+    this.registerEvent(
+      this.app.vault.on("create", (file) => this.scheduleRefreshForPaths(file.path))
+    );
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => this.scheduleRefreshForPaths(file.path))
+    );
+    this.registerEvent(
+      this.app.vault.on("delete", (file) => this.scheduleRefreshForPaths(file.path))
+    );
+    this.registerEvent(
+      this.app.vault.on("rename", (file, oldPath) =>
+        this.scheduleRefreshForPaths(file.path, oldPath)
+      )
+    );
+
+    this.addSettingTab(new DayspanSettingTab(this.app, this));
+  }
+
+  onunload(): void {
+    if (this.refreshTimer) window.clearTimeout(this.refreshTimer);
+  }
+
+  todayKey(): string {
+    return toDateKey(new Date());
+  }
+
+  async activateView(): Promise<void> {
+    let leaf = this.app.workspace.getLeavesOfType(DAYSPAN_VIEW_TYPE)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf(true);
+      await leaf.setViewState({ type: DAYSPAN_VIEW_TYPE, active: true });
+    }
+    await this.app.workspace.revealLeaf(leaf);
+    const view = leaf.view;
+    if (view instanceof DayspanView) await view.refresh();
+  }
+
+  openSelectionEntry(editor: Editor, view: MarkdownView | MarkdownFileInfo): void {
+    const selection = editor.getSelection().trim();
+    if (!selection) {
+      new Notice("文章を選択してから実行してください");
+      return;
+    }
+
+    const file = view.file;
+    const sourceLine = Math.min(editor.getCursor("from").line, editor.getCursor("to").line) + 1;
+    this.openSelectionDraft({
+      title: makeTitleFromSelection(selection),
+      date: this.inferDate(file),
+      excerpt: selection,
+      sourcePath: file?.path,
+      sourceLine,
+    });
+  }
+
+  openActiveSelectionEntry(): void {
+    const activeEditor = this.app.workspace.activeEditor;
+    if (activeEditor?.editor) {
+      const editor = activeEditor.editor;
+      if (editor.getSelection().trim()) {
+        this.openSelectionEntry(editor, activeEditor);
+        return;
+      }
+    }
+
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    const previewSelection = this.getMarkdownPreviewSelection(view);
+    if (!view?.file || !previewSelection) {
+      new Notice("Markdown本文の文章を選択してから実行してください");
+      return;
+    }
+
+    this.openSelectionDraft({
+      title: makeTitleFromSelection(previewSelection.text),
+      date: this.inferDate(view.file),
+      excerpt: previewSelection.text,
+      sourcePath: view.file.path,
+      sourceLine: previewSelection.sourceLine,
+    });
+  }
+
+  private openSelectionDraft(initial: DayspanDraft): void {
+    new DayspanEntryModal(
+      this.app,
+      initial,
+      "dayspanに登録",
+      "登録",
+      async (draft) => {
+        await this.createRecord(draft);
+        new Notice("Dayspanに登録しました");
+        await this.activateView();
+      }
+    ).open();
+  }
+
+  openManualEntry(): void {
+    new DayspanEntryModal(
+      this.app,
+      { title: "", date: this.todayKey(), excerpt: "" },
+      "dayspanに手動登録",
+      "登録",
+      async (draft) => {
+        await this.createRecord(draft);
+        new Notice("Dayspanに登録しました");
+        await this.refreshViews();
+      }
+    ).open();
+  }
+
+  openEditEntry(record: DayspanRecord): void {
+    new DayspanEntryModal(
+      this.app,
+      {
+        title: record.title,
+        date: record.date,
+        displayMode: record.displayMode,
+        excerpt: record.excerpt,
+        sourcePath: record.sourcePath,
+        sourceLine: record.sourceLine,
+        created: record.created,
+      },
+      "dayspanを編集",
+      "保存",
+      async (draft) => {
+        await this.app.vault.modify(record.file, serializeRecord(draft));
+        new Notice("Dayspanを更新しました");
+        await this.refreshViews();
+      }
+    ).open();
+  }
+
+  async deleteRecord(record: DayspanRecord): Promise<void> {
+    const confirmed = await this.app.fileManager.promptForDeletion(record.file);
+    if (!confirmed) return;
+    await this.app.fileManager.trashFile(record.file);
+    new Notice("Dayspanの記録をゴミ箱へ移動しました");
+    await this.refreshViews();
+  }
+
+  async openRecordSource(record: DayspanRecord): Promise<void> {
+    const source = record.sourcePath ? this.app.vault.getFileByPath(record.sourcePath) : null;
+    if (!source) {
+      await this.openRecordFile(record);
+      if (record.sourcePath) new Notice("元ノートが見つからないため、登録ノートを開きました");
+      return;
+    }
+
+    const leaf = this.app.workspace.getLeaf(false);
+    await leaf.openFile(source, { active: true });
+    if (typeof record.sourceLine !== "number") return;
+
+    const view = leaf.view;
+    if (view instanceof MarkdownView) {
+      const lastLine = Math.max(0, view.editor.lineCount() - 1);
+      const line = Math.min(lastLine, Math.max(0, record.sourceLine - 1));
+      view.editor.setCursor({ line, ch: 0 });
+      view.editor.scrollIntoView({ from: { line, ch: 0 }, to: { line, ch: 0 } }, true);
+    }
+  }
+
+  async openRecordFile(record: DayspanRecord): Promise<void> {
+    await this.app.workspace.getLeaf(false).openFile(record.file, { active: true });
+  }
+
+  async loadRecords(): Promise<DayspanRecord[]> {
+    const folder = this.normalizedStorageFolder();
+    const root = this.app.vault.getAbstractFileByPath(folder);
+    if (!(root instanceof TFolder)) return [];
+
+    const files: TFile[] = [];
+    this.collectMarkdownFiles(root, files);
+
+    const parsed = await Promise.all(
+      files.map(async (file) => parseRecord(file, await this.app.vault.cachedRead(file)))
+    );
+    return parsed.filter((record): record is DayspanRecord => record !== null);
+  }
+
+  async refreshViews(): Promise<void> {
+    for (const leaf of this.app.workspace.getLeavesOfType(DAYSPAN_VIEW_TYPE)) {
+      if (leaf.view instanceof DayspanView) await leaf.view.refresh();
+    }
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+  }
+
+  private async loadSettings(): Promise<void> {
+    const saved = (await this.loadData()) as Partial<DayspanSettings> | null;
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...saved,
+      sectionOrder: normalizeSectionOrder(saved?.sectionOrder),
+    };
+  }
+
+  private inferDate(file: TFile | null): string {
+    if (!file) return this.todayKey();
+    if (parseDateKey(file.basename)) return file.basename;
+
+    const frontmatter: unknown = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const rawDate: unknown =
+      typeof frontmatter === "object" && frontmatter !== null && "date" in frontmatter
+        ? frontmatter.date
+        : undefined;
+    const date = rawDate instanceof Date ? rawDate.toISOString().slice(0, 10) : rawDate;
+    if (typeof date === "string" && parseDateKey(date)) return date;
+    return this.todayKey();
+  }
+
+  private getMarkdownPreviewSelection(
+    view: MarkdownView | null
+  ): { text: string; sourceLine?: number } | null {
+    if (!view || view.getMode() !== "preview") return null;
+
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
+
+    const range = selection.getRangeAt(0);
+    const preview = view.containerEl.querySelector(".markdown-preview-view");
+    if (!preview || !preview.contains(range.commonAncestorContainer)) return null;
+
+    const text = selection.toString().trim();
+    if (!text) return null;
+
+    const container =
+      range.commonAncestorContainer.instanceOf(Element)
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+    const rawLine = container?.closest<HTMLElement>("[data-line]")?.dataset.line;
+    const zeroBasedLine = rawLine === undefined ? Number.NaN : Number(rawLine);
+
+    return {
+      text,
+      sourceLine: Number.isInteger(zeroBasedLine) && zeroBasedLine >= 0 ? zeroBasedLine + 1 : undefined,
+    };
+  }
+
+  private normalizedStorageFolder(): string {
+    const value = normalizePath(this.settings.storageFolder.trim()).replace(/\/$/, "");
+    return value || DEFAULT_SETTINGS.storageFolder;
+  }
+
+  private async createRecord(draft: DayspanDraft): Promise<TFile> {
+    const folder = this.normalizedStorageFolder();
+    await this.ensureFolder(folder);
+    const base = `${draft.date} - ${sanitizeFileName(draft.title)}`;
+    let path = `${folder}/${base}.md`;
+    let index = 2;
+    while (this.app.vault.getAbstractFileByPath(path)) {
+      path = `${folder}/${base} ${index}.md`;
+      index += 1;
+    }
+    return this.app.vault.create(path, serializeRecord(draft));
+  }
+
+  private async ensureFolder(folder: string): Promise<void> {
+    let path = "";
+    for (const segment of folder.split("/").filter(Boolean)) {
+      path = path ? `${path}/${segment}` : segment;
+      if (!this.app.vault.getAbstractFileByPath(path)) {
+        await this.app.vault.createFolder(path);
+      }
+    }
+  }
+
+  private collectMarkdownFiles(folder: TFolder, files: TFile[]): void {
+    for (const child of folder.children) {
+      if (child instanceof TFolder) {
+        this.collectMarkdownFiles(child, files);
+      } else if (child instanceof TFile && child.extension === "md") {
+        files.push(child);
+      }
+    }
+  }
+
+  private scheduleRefreshForPaths(...paths: string[]): void {
+    if (!paths.some((path) => this.isStoragePath(path))) return;
+    this.scheduleRefresh();
+  }
+
+  private isStoragePath(path: string): boolean {
+    const folder = this.normalizedStorageFolder();
+    return path === folder || path.startsWith(`${folder}/`);
+  }
+
+  private scheduleRefresh(): void {
+    if (!this.app.workspace.getLeavesOfType(DAYSPAN_VIEW_TYPE).length) return;
+    if (this.refreshTimer) window.clearTimeout(this.refreshTimer);
+    this.refreshTimer = window.setTimeout(() => void this.refreshViews(), 150);
+  }
+}
+
+type DayspanSettingKey = "storageFolder";
+
+class DayspanSettingTab extends PluginSettingTab {
+  constructor(app: App, private plugin: DayspanPlugin) {
+    super(app, plugin);
+  }
+
+  getSettingDefinitions(): SettingDefinitionItem<DayspanSettingKey>[] {
+    return [
+      {
+        name: "記録の保存先",
+        desc: "Dayspanの登録情報をMarkdownで保存するVault内フォルダです",
+        control: {
+          type: "folder",
+          key: "storageFolder",
+          defaultValue: DEFAULT_SETTINGS.storageFolder,
+          placeholder: DEFAULT_SETTINGS.storageFolder,
+        },
+      },
+      {
+        type: "list",
+        heading: "セクションの並び順",
+        items: this.plugin.settings.sectionOrder.map((kind, index) => ({
+          name: this.sectionTitle(kind),
+          desc: `上から${index + 1}番目`,
+        })),
+        onReorder: (from, to) => void this.moveSection(from, to),
+      },
+      {
+        type: "group",
+        heading: "表示色",
+        items: [
+          {
+            name: "あと何日の色",
+            desc: "未来の日付に使う色です",
+            render: (setting) => {
+              setting
+                .addColorPicker((color) =>
+                  color
+                    .setValue(this.plugin.settings.futureColor)
+                    .onChange((value) => void this.setColor("futureColor", value))
+                )
+                .addExtraButton((button) =>
+                  button
+                    .setIcon("rotate-ccw")
+                    .setTooltip("初期色に戻す")
+                    .onClick(() => void this.resetColor("futureColor"))
+                );
+            },
+          },
+          {
+            name: "あれから何日の色",
+            desc: "過去の日付に使う色です",
+            render: (setting) => {
+              setting
+                .addColorPicker((color) =>
+                  color
+                    .setValue(this.plugin.settings.pastColor)
+                    .onChange((value) => void this.setColor("pastColor", value))
+                )
+                .addExtraButton((button) =>
+                  button
+                    .setIcon("rotate-ccw")
+                    .setTooltip("初期色に戻す")
+                    .onClick(() => void this.resetColor("pastColor"))
+                );
+            },
+          },
+        ],
+      },
+      {
+        name: "期間の計算",
+        desc: "日数はカレンダー日で計算します。基準日と今日が同じ日は0日です。",
+        searchable: false,
+      },
+    ];
+  }
+
+  getControlValue(key: DayspanSettingKey): unknown {
+    return this.plugin.settings[key];
+  }
+
+  async setControlValue(key: DayspanSettingKey, value: unknown): Promise<void> {
+    if (key !== "storageFolder" || typeof value !== "string") return;
+    this.plugin.settings.storageFolder = value.trim() || DEFAULT_SETTINGS.storageFolder;
+    await this.plugin.saveSettings();
+    await this.plugin.refreshViews();
+  }
+
+  private sectionTitle(kind: DayspanSectionKind): string {
+    if (kind === "future") return "あと何日";
+    if (kind === "today") return "今日";
+    return "あれから何日";
+  }
+
+  private async moveSection(from: number, to: number): Promise<void> {
+    if (to < 0 || to >= this.plugin.settings.sectionOrder.length) return;
+
+    const order = [...this.plugin.settings.sectionOrder];
+    const [section] = order.splice(from, 1);
+    if (!section) return;
+    order.splice(to, 0, section);
+    this.plugin.settings.sectionOrder = order;
+
+    await this.plugin.saveSettings();
+    await this.plugin.refreshViews();
+    this.update();
+  }
+
+  private async setColor(
+    key: "futureColor" | "pastColor",
+    value: string
+  ): Promise<void> {
+    this.plugin.settings[key] = value;
+    await this.plugin.saveSettings();
+    await this.plugin.refreshViews();
+  }
+
+  private async resetColor(key: "futureColor" | "pastColor"): Promise<void> {
+    this.plugin.settings[key] = DEFAULT_SETTINGS[key];
+    await this.plugin.saveSettings();
+    await this.plugin.refreshViews();
+    this.update();
+  }
+}

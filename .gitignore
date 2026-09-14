@@ -1,0 +1,15 @@
+# Dependencies and generated files
+node_modules/
+main.js
+*.map
+.test-build.mjs
+
+# Local Obsidian settings. Never publish user data.
+data.json
+
+# Editor and operating-system files
+.vscode/
+.idea/
+*.iml
+.DS_Store
+npm-debug.log*

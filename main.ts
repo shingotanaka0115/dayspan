@@ -36,6 +36,11 @@ import {
   normalizeCollapsedSections,
   normalizeSectionOrder,
 } from "./src/settings";
+import {
+  formatSourceReference,
+  isLinkedSourceReference,
+  parseSourceReference,
+} from "./src/source-link";
 import { DAYSPAN_VIEW_TYPE, DayspanView } from "./src/view";
 
 export interface DayspanSettings {
@@ -267,6 +272,18 @@ export default class DayspanPlugin extends Plugin {
   }
 
   async openRecordFile(record: DayspanRecord): Promise<void> {
+    const sourcePath = record.sourcePath;
+    if (sourcePath) {
+      await this.app.fileManager.processFrontMatter(
+        record.file,
+        (frontmatter: Record<string, unknown>) => {
+          const storedPath = parseSourceReference(frontmatter.source);
+          if (storedPath === sourcePath && !isLinkedSourceReference(frontmatter.source)) {
+            frontmatter.source = formatSourceReference(sourcePath);
+          }
+        }
+      );
+    }
     await this.app.workspace.getLeaf(false).openFile(record.file, { active: true });
   }
 

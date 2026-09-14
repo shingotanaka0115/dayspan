@@ -10,6 +10,11 @@ import {
 } from "../src/date-utils";
 import { createTranslator, durationUnit, resolveLocale } from "../src/i18n";
 import { normalizeCollapsedSections, normalizeSectionOrder } from "../src/settings";
+import {
+  formatSourceReference,
+  isLinkedSourceReference,
+  parseSourceReference,
+} from "../src/source-link";
 
 test("基準日と今日が同じなら0日", () => {
   assert.equal(differenceInCalendarDays("2026-09-11", "2026-09-11"), 0);
@@ -139,4 +144,16 @@ test("期間単位と日付を日本語・英語で表示する", () => {
   assert.equal(durationUnit("en", "day", 2), "days");
   assert.equal(formatLocalizedDate("2026-09-14", "ja"), "2026年9月14日(月)");
   assert.equal(formatLocalizedDate("2026-09-14", "en"), "Mon, Sep 14, 2026");
+});
+
+test("登録元をクリックできる内部リンクとして保存し、従来のパスも読み込める", () => {
+  const path = "08_Journals/2026-09-14.md";
+  const link = formatSourceReference(path);
+
+  assert.equal(link, "[[08_Journals/2026-09-14.md]]");
+  assert.equal(parseSourceReference(link), path);
+  assert.equal(parseSourceReference(path), path);
+  assert.equal(parseSourceReference("[[08_Journals/2026-09-14.md|元メモ]]"), path);
+  assert.equal(isLinkedSourceReference(link), true);
+  assert.equal(isLinkedSourceReference(path), false);
 });

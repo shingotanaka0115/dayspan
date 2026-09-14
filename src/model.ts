@@ -5,6 +5,7 @@ import {
   normalizeDisplayMode,
   parseDateKey,
 } from "./date-utils";
+import { formatSourceReference, parseSourceReference } from "./source-link";
 
 export interface DayspanRecord {
   file: TFile;
@@ -36,7 +37,7 @@ export function serializeRecord(draft: DayspanDraft): string {
     created: draft.created ?? new Date().toISOString(),
   };
 
-  if (draft.sourcePath) frontmatter.source = draft.sourcePath;
+  if (draft.sourcePath) frontmatter.source = formatSourceReference(draft.sourcePath);
   if (typeof draft.sourceLine === "number") frontmatter.sourceLine = draft.sourceLine;
 
   const yaml = stringifyYaml(frontmatter).replace(/\s+$/, "");
@@ -72,7 +73,7 @@ export function parseRecord(file: TFile, content: string): DayspanRecord | null 
     date,
     displayMode: normalizeDisplayMode(data.display),
     excerpt: match[2].trim(),
-    sourcePath: typeof data.source === "string" ? data.source : undefined,
+    sourcePath: parseSourceReference(data.source),
     sourceLine: Number.isInteger(sourceLine) && sourceLine > 0 ? sourceLine : undefined,
     created: typeof data.created === "string" ? data.created : "",
   };

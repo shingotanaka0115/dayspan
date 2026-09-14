@@ -24,7 +24,7 @@ Dayspan lets you intentionally save meaningful moments from your Markdown notes 
 - Reorder the three sections.
 - Expand or collapse each section and remember its state.
 - Customize colors for future and past records.
-- Open the original source note from a saved record.
+- Keep a clickable link to the original source note in each saved record.
 - Store every record as a readable Markdown file in your vault.
 - Use the plugin on desktop and mobile.
 

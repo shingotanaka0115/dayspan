@@ -17,6 +17,7 @@ interface CountedRecord {
 
 export class DayspanView extends ItemView {
   private refreshVersion = 0;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(leaf: WorkspaceLeaf, private plugin: DayspanPlugin) {
     super(leaf);
@@ -35,7 +36,18 @@ export class DayspanView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = new ResizeObserver(([entry]) => {
+      this.updateResponsiveState(entry?.contentRect.width ?? this.contentEl.clientWidth);
+    });
+    this.resizeObserver.observe(this.contentEl);
+    this.updateResponsiveState(this.contentEl.clientWidth);
     await this.refresh();
+  }
+
+  async onClose(): Promise<void> {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
   }
 
   async refresh(): Promise<void> {
@@ -214,5 +226,10 @@ export class DayspanView extends ItemView {
       onClick();
     });
     return button;
+  }
+
+  private updateResponsiveState(width: number): void {
+    this.contentEl.classList.toggle("dayspan-is-narrow", width <= 600);
+    this.contentEl.classList.toggle("dayspan-is-extra-narrow", width <= 440);
   }
 }

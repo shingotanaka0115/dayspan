@@ -317,3 +317,130 @@
     font-size: 0.68rem;
   }
 }
+
+.dayspan-view.dayspan-is-narrow {
+  padding: 14px 8px 36px;
+}
+
+.dayspan-view.dayspan-is-narrow .dayspan-header {
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.dayspan-view.dayspan-is-narrow .dayspan-heading h2 {
+  font-size: 1.25rem;
+}
+
+.dayspan-view.dayspan-is-narrow .dayspan-heading p {
+  max-width: 180px;
+  font-size: var(--font-ui-smaller);
+}
+
+.dayspan-view.dayspan-is-narrow .dayspan-section {
+  margin-bottom: 26px;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow) .dayspan-card {
+  grid-template-columns: 52px minmax(0, 1fr) minmax(74px, auto) 28px;
+  gap: 10px;
+  min-height: 82px;
+  padding: 10px 6px 10px 10px;
+  border-radius: 12px;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow) .dayspan-card-accent {
+  width: 52px;
+  height: 58px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow) .dayspan-card-excerpt {
+  margin-top: 5px;
+  font-size: 0.72rem;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow) .dayspan-count {
+  min-width: 74px;
+  padding: 10px 9px;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow) .dayspan-count-number {
+  font-size: 1.45rem;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow) .dayspan-count--compound {
+  gap: 3px;
+  padding-inline: 7px;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow)
+  .dayspan-count--compound
+  .dayspan-count-number {
+  font-size: 1.05rem;
+}
+
+.dayspan-view.dayspan-is-narrow:not(.dayspan-is-extra-narrow)
+  .dayspan-count--compound
+  .dayspan-count-unit {
+  font-size: 0.64rem;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card {
+  grid-template-areas:
+    "accent content more"
+    "accent count count";
+  grid-template-columns: 44px minmax(0, 1fr) 28px;
+  grid-template-rows: auto auto;
+  gap: 5px 8px;
+  min-height: 72px;
+  padding: 9px 5px 9px 8px;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card-accent {
+  grid-area: accent;
+  width: 40px;
+  height: 46px;
+  font-size: 1rem;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card-content {
+  grid-area: content;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card-content h3,
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card-excerpt {
+  display: none;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card-date {
+  overflow: hidden;
+  font-size: 0.66rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-count {
+  grid-area: count;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  padding: 5px 6px;
+  gap: 2px;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-count-number,
+.dayspan-view.dayspan-is-extra-narrow .dayspan-count--compound .dayspan-count-number {
+  font-size: 0.9rem;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-count-unit,
+.dayspan-view.dayspan-is-extra-narrow .dayspan-count--compound .dayspan-count-unit {
+  font-size: 0.58rem;
+}
+
+.dayspan-view.dayspan-is-extra-narrow .dayspan-card > .dayspan-icon-button {
+  grid-area: more;
+  align-self: start;
+}

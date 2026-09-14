@@ -39,7 +39,7 @@ Month and year calculations use calendar boundaries rather than fixed 30-day or 
 
 Select a card to open its saved Dayspan record. If it was created from selected text, the `source` property contains a clickable link to the original note. You can also open the source note directly from the card's actions menu.
 
-You can also use **Add manually** to add birthdays, age milestones, anniversaries, or future deadlines without selecting text.
+You can also use **Add manually** to add birthdays, age milestones, anniversaries, or future deadlines without selecting text. From the edit dialog, you can choose or remove a source note for any existing record.
 
 ## Data and privacy
 

@@ -1,4 +1,11 @@
-import { App, Modal, Setting } from "obsidian";
+import {
+  App,
+  ExtraButtonComponent,
+  FuzzySuggestModal,
+  Modal,
+  Setting,
+  TFile,
+} from "obsidian";
 import {
   DEFAULT_DISPLAY_MODE,
   normalizeDisplayMode,
@@ -82,15 +89,38 @@ export class DayspanEntryModal extends Modal {
       this.draft.excerpt = excerpt.value;
     });
 
-    if (this.draft.sourcePath) {
-      const line = this.draft.sourceLine
-        ? this.t("modal.sourceLine", { line: this.draft.sourceLine })
-        : "";
-      contentEl.createDiv({
-        text: this.t("modal.source", { path: this.draft.sourcePath, line }),
-        cls: "dayspan-modal-source",
-      });
-    }
+    const sourceSetting = new Setting(contentEl)
+      .setName(this.t("modal.source"))
+      .setDesc(this.sourceDescription());
+    let clearSourceButton: ExtraButtonComponent | null = null;
+    const updateSourceSetting = (): void => {
+      sourceSetting.setDesc(this.sourceDescription());
+      clearSourceButton?.setDisabled(!this.draft.sourcePath);
+    };
+    sourceSetting.addButton((button) =>
+      button
+        .setButtonText(this.t("action.chooseSource"))
+        .setIcon("file-search")
+        .onClick(() =>
+          new SourceNoteSuggestModal(this.app, this.t, (file) => {
+            this.draft.sourcePath = file.path;
+            this.draft.sourceLine = undefined;
+            updateSourceSetting();
+          }).open()
+        )
+    );
+    sourceSetting.addExtraButton((button) => {
+      clearSourceButton = button;
+      button
+        .setIcon("x")
+        .setTooltip(this.t("action.clearSource"))
+        .setDisabled(!this.draft.sourcePath)
+        .onClick(() => {
+          this.draft.sourcePath = undefined;
+          this.draft.sourceLine = undefined;
+          updateSourceSetting();
+        });
+    });
 
     this.errorEl = contentEl.createDiv("dayspan-modal-error");
 
@@ -127,5 +157,40 @@ export class DayspanEntryModal extends Modal {
 
   private showError(message: string): void {
     if (this.errorEl) this.errorEl.setText(message);
+  }
+
+  private sourceDescription(): string {
+    if (!this.draft.sourcePath) {
+      return `${this.t("modal.sourceDesc")} ${this.t("modal.sourceNone")}`;
+    }
+    const line = this.draft.sourceLine
+      ? this.t("modal.sourceLine", { line: this.draft.sourceLine })
+      : "";
+    return this.t("modal.sourceValue", { path: this.draft.sourcePath, line });
+  }
+}
+
+class SourceNoteSuggestModal extends FuzzySuggestModal<TFile> {
+  constructor(
+    app: App,
+    t: Translator,
+    private onChoose: (file: TFile) => void
+  ) {
+    super(app);
+    this.setPlaceholder(t("modal.sourceSearch"));
+  }
+
+  getItems(): TFile[] {
+    return this.app.vault
+      .getMarkdownFiles()
+      .sort((left, right) => left.path.localeCompare(right.path));
+  }
+
+  getItemText(file: TFile): string {
+    return file.path;
+  }
+
+  onChooseItem(file: TFile): void {
+    this.onChoose(file);
   }
 }

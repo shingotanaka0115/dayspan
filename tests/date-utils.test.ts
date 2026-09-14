@@ -136,6 +136,10 @@ test("日本語と英語の表示文言を切り替える", () => {
     createTranslator("en")("view.openRecord", { title: "Sample event" }),
     "Open Sample event"
   );
+  assert.equal(createTranslator("ja")("action.chooseSource"), "ノートを選ぶ");
+  assert.equal(createTranslator("en")("action.chooseSource"), "Choose note");
+  assert.equal(createTranslator("ja")("modal.sourceNone"), "設定されていません");
+  assert.equal(createTranslator("en")("modal.sourceNone"), "Not set");
 });
 
 test("期間単位と日付を日本語・英語で表示する", () => {

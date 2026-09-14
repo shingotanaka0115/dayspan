@@ -55,8 +55,10 @@ export class DayspanView extends ItemView {
     const root = this.containerEl.children[1] as HTMLElement;
     root.empty();
     root.addClass("dayspan-view");
-    root.style.setProperty("--dayspan-future-color", this.plugin.settings.futureColor);
-    root.style.setProperty("--dayspan-past-color", this.plugin.settings.pastColor);
+    root.setCssProps({
+      "--dayspan-future-color": this.plugin.settings.futureColor,
+      "--dayspan-past-color": this.plugin.settings.pastColor,
+    });
 
     const header = root.createDiv("dayspan-header");
     const heading = header.createDiv("dayspan-heading");

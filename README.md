@@ -37,6 +37,8 @@ Month and year calculations use calendar boundaries rather than fixed 30-day or 
 3. Confirm the title, reference date, and display format.
 4. Open Dayspan from the ribbon calendar icon or run **Open list** from the Command palette.
 
+Select a card to open its saved Dayspan record. If it was created from selected text, the `source` property contains a clickable link to the original note. You can also open the source note directly from the card's actions menu.
+
 You can also use **Add manually** to add birthdays, age milestones, anniversaries, or future deadlines without selecting text.
 
 ## Data and privacy

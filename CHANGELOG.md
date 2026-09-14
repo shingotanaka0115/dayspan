@@ -2,6 +2,12 @@
 
 All notable changes to Dayspan will be documented in this file.
 
+## 0.1.2
+
+- Let each date section be expanded or collapsed from its heading.
+- Remember collapsed sections after refreshing or restarting Obsidian.
+- Add accessible Japanese and English labels and keyboard operation to section controls.
+
 ## 0.1.1
 
 - Add Japanese and English interfaces based on the Obsidian display language.

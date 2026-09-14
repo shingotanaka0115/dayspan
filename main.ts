@@ -33,6 +33,7 @@ import {
 import {
   DEFAULT_SECTION_ORDER,
   DayspanSectionKind,
+  normalizeCollapsedSections,
   normalizeSectionOrder,
 } from "./src/settings";
 import { DAYSPAN_VIEW_TYPE, DayspanView } from "./src/view";
@@ -42,6 +43,7 @@ export interface DayspanSettings {
   futureColor: string;
   pastColor: string;
   sectionOrder: DayspanSectionKind[];
+  collapsedSections: DayspanSectionKind[];
 }
 
 const DEFAULT_SETTINGS: DayspanSettings = {
@@ -49,6 +51,7 @@ const DEFAULT_SETTINGS: DayspanSettings = {
   futureColor: "#2ea8ff",
   pastColor: "#f59e0b",
   sectionOrder: [...DEFAULT_SECTION_ORDER],
+  collapsedSections: [],
 };
 
 export default class DayspanPlugin extends Plugin {
@@ -291,12 +294,20 @@ export default class DayspanPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  async setSectionCollapsed(kind: DayspanSectionKind, collapsed: boolean): Promise<void> {
+    const collapsedSections = this.settings.collapsedSections.filter((item) => item !== kind);
+    if (collapsed) collapsedSections.push(kind);
+    this.settings.collapsedSections = collapsedSections;
+    await this.saveSettings();
+  }
+
   private async loadSettings(): Promise<void> {
     const saved = (await this.loadData()) as Partial<DayspanSettings> | null;
     this.settings = {
       ...DEFAULT_SETTINGS,
       ...saved,
       sectionOrder: normalizeSectionOrder(saved?.sectionOrder),
+      collapsedSections: normalizeCollapsedSections(saved?.collapsedSections),
     };
   }
 

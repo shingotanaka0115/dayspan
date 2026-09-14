@@ -8,13 +8,13 @@ Dayspan lets you intentionally save meaningful moments from your Markdown notes 
 
 > [!NOTE]
 > Dayspan is currently preparing for its first public beta and is not yet available in the Obsidian Community Plugins directory.
-> The current beta interface is Japanese. English interface localization is planned before the Community Plugins submission.
+> The interface follows Obsidian's display language in Japanese and English, with English used as the fallback for other languages.
 
 ## Features
 
 - Register selected text from Markdown editing or reading view.
 - Add milestones and future dates manually.
-- Automatically group records into **Until**, **Today**, and **Since** sections.
+- Automatically group records into **Days remaining**, **Today**, and **Days elapsed** sections.
 - Choose a display format for each record:
   - Days
   - Months
@@ -22,6 +22,7 @@ Dayspan lets you intentionally save meaningful moments from your Markdown notes 
   - Months and days
   - Years, months, and days
 - Reorder the three sections.
+- Expand or collapse each section and remember its state.
 - Customize colors for future and past records.
 - Open the original source note from a saved record.
 - Store every record as a readable Markdown file in your vault.

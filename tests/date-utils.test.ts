@@ -9,7 +9,7 @@ import {
   toDateKey,
 } from "../src/date-utils";
 import { createTranslator, durationUnit, resolveLocale } from "../src/i18n";
-import { normalizeSectionOrder } from "../src/settings";
+import { normalizeCollapsedSections, normalizeSectionOrder } from "../src/settings";
 
 test("基準日と今日が同じなら0日", () => {
   assert.equal(differenceInCalendarDays("2026-09-11", "2026-09-11"), 0);
@@ -103,6 +103,14 @@ test("古い設定や不正な並び順には不足項目を補う", () => {
     "future",
     "today",
   ]);
+});
+
+test("折りたたみ状態は有効なセクションだけ重複なく復元する", () => {
+  assert.deepEqual(normalizeCollapsedSections(["past", "past", "unknown", "today"]), [
+    "past",
+    "today",
+  ]);
+  assert.deepEqual(normalizeCollapsedSections(undefined), []);
 });
 
 test("Obsidianの日本語設定だけを日本語として扱い、それ以外は英語へフォールバックする", () => {

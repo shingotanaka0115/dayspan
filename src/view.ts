@@ -19,6 +19,7 @@ interface CountedRecord {
 export class DayspanView extends ItemView {
   private refreshVersion = 0;
   private resizeObserver: ResizeObserver | null = null;
+  private readonly viewId = Math.random().toString(36).slice(2);
 
   constructor(leaf: WorkspaceLeaf, private plugin: DayspanPlugin) {
     super(leaf);
@@ -131,15 +132,47 @@ export class DayspanView extends ItemView {
     const section = root.createEl("section", {
       cls: `dayspan-section dayspan-section--${kind}`,
     });
-    const heading = section.createDiv("dayspan-section-heading");
+    const collapsed = this.plugin.settings.collapsedSections.includes(kind);
+    section.toggleClass("dayspan-section--collapsed", collapsed);
+
+    const listId = `dayspan-list-${this.viewId}-${kind}`;
+    const heading = section.createEl("button", {
+      cls: "dayspan-section-heading",
+      attr: {
+        type: "button",
+        "aria-expanded": String(!collapsed),
+        "aria-controls": listId,
+        "aria-label": this.plugin.t(
+          collapsed ? "action.expandSection" : "action.collapseSection",
+          { title }
+        ),
+      },
+    });
     setIcon(heading.createSpan("dayspan-section-icon"), icon);
     heading.createSpan({
       text: this.plugin.t("section.heading", { title, count: items.length }),
     });
-    heading.createDiv("dayspan-section-line");
+    heading.createSpan("dayspan-section-line");
+    setIcon(heading.createSpan("dayspan-section-chevron"), "chevron-down");
 
-    const list = section.createDiv("dayspan-list");
+    const list = section.createDiv({ cls: "dayspan-list", attr: { id: listId } });
+    list.hidden = collapsed;
     for (const item of items) this.renderCard(list, item);
+
+    heading.addEventListener("click", () => {
+      const nextCollapsed = !section.hasClass("dayspan-section--collapsed");
+      section.toggleClass("dayspan-section--collapsed", nextCollapsed);
+      list.hidden = nextCollapsed;
+      heading.setAttribute("aria-expanded", String(!nextCollapsed));
+      heading.setAttribute(
+        "aria-label",
+        this.plugin.t(
+          nextCollapsed ? "action.expandSection" : "action.collapseSection",
+          { title }
+        )
+      );
+      void this.plugin.setSectionCollapsed(kind, nextCollapsed);
+    });
   }
 
   private renderCard(list: HTMLElement, item: CountedRecord): void {

@@ -70,10 +70,29 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
   margin-bottom: 12px;
+  background: transparent;
+  box-shadow: none;
   color: var(--dayspan-accent);
   font-size: var(--font-ui-small);
   font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dayspan-section-heading:hover,
+.dayspan-section-heading:focus-visible {
+  background: transparent;
+  color: var(--dayspan-accent);
+  box-shadow: none;
+}
+
+.dayspan-section-heading:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--dayspan-accent) 65%, transparent);
+  outline-offset: 5px;
 }
 
 .dayspan-section-icon {
@@ -92,9 +111,36 @@
   background: color-mix(in srgb, var(--dayspan-accent) 42%, var(--background-modifier-border));
 }
 
+.dayspan-section-chevron {
+  display: inline-flex;
+  flex: 0 0 auto;
+  transition: transform 140ms ease;
+}
+
+.dayspan-section-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dayspan-section--collapsed {
+  margin-bottom: 20px;
+}
+
+.dayspan-section--collapsed .dayspan-section-heading {
+  margin-bottom: 0;
+}
+
+.dayspan-section--collapsed .dayspan-section-chevron {
+  transform: rotate(-90deg);
+}
+
 .dayspan-list {
   display: grid;
   gap: 10px;
+}
+
+.dayspan-list[hidden] {
+  display: none;
 }
 
 .dayspan-card {
